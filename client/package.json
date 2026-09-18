@@ -3,13 +3,13 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://iCery404.github.io/budgetwise",
+  "homepage": "https://iCery404.github.io/budgetwise/",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "predeploy": "vite build",
+   "predeploy": "npm run build",
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
