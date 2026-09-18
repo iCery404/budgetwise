@@ -1,7 +1,6 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
-
 const authRoutes = require("./routes/auth");
 const categoryRoutes = require("./routes/categories");
 const transactionRoutes = require("./routes/transactions");
@@ -15,13 +14,10 @@ const recurringRoutes = require("./routes/recurring");
 const goalRoutes = require("./routes/goals");
 const debtRoutes = require("./routes/debts");
 const analyticsRoutes = require("./routes/analytics");
-
 const app = express();
 app.use(cors());
 app.use(express.json());
-
 app.get("/api/health", (req, res) => res.json({ status: "ok" }));
-
 app.use("/api/auth", authRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/transactions", transactionRoutes);
@@ -35,11 +31,9 @@ app.use("/api/recurring", recurringRoutes);
 app.use("/api/goals", goalRoutes);
 app.use("/api/debts", debtRoutes);
 app.use("/api/analytics", analyticsRoutes);
-
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).json({ message: "Something went wrong. Please try again." });
 });
-
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`BudgetWise API running on http://localhost:${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`BudgetWise API running on port ${PORT}`));
