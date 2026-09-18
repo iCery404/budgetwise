@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import api from "../api";
 import { ProgressBar, peso, fmtDate } from "../components/Shared";
 import Icon from "../components/Icon";
+import Portal from "../components/Portal";
 
 export default function Goals() {
   const [goals, setGoals] = useState([]);
@@ -139,6 +140,7 @@ function GoalModal({ error, onClose, onSave }) {
   }
 
   return (
+    <Portal>
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50 bw-modal-overlay">
       <div className="bg-card rounded-2xl p-6 w-full max-w-md bw-modal-card">
         <h2 className="font-semibold text-base mb-4">New Goal</h2>
@@ -186,6 +188,7 @@ function GoalModal({ error, onClose, onSave }) {
         </form>
       </div>
     </div>
+    </Portal>
   );
 }
 
@@ -198,6 +201,7 @@ function ContributeModal({ goal, error, onClose, onSave }) {
   }
 
   return (
+    <Portal>
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50 bw-modal-overlay">
       <div className="bg-card rounded-2xl p-6 w-full max-w-sm bw-modal-card">
         <h2 className="font-semibold text-base mb-4">Add funds to "{goal.name}"</h2>
@@ -222,5 +226,6 @@ function ContributeModal({ goal, error, onClose, onSave }) {
         </form>
       </div>
     </div>
+    </Portal>
   );
 }

@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import api from "../api";
 import { ProgressBar, peso } from "../components/Shared";
 import Icon from "../components/Icon";
+import Portal from "../components/Portal";
 
 export default function Debts() {
   const [debts, setDebts] = useState([]);
@@ -161,6 +162,7 @@ function DebtModal({ error, onClose, onSave }) {
   }
 
   return (
+    <Portal>
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50 bw-modal-overlay">
       <div className="bg-card rounded-2xl p-6 w-full max-w-md bw-modal-card max-h-[90vh] overflow-y-auto">
         <h2 className="font-semibold text-base mb-4">Add Debt</h2>
@@ -225,6 +227,7 @@ function DebtModal({ error, onClose, onSave }) {
         </form>
       </div>
     </div>
+    </Portal>
   );
 }
 
@@ -237,6 +240,7 @@ function PayModal({ debt, error, onClose, onSave }) {
   }
 
   return (
+    <Portal>
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50 bw-modal-overlay">
       <div className="bg-card rounded-2xl p-6 w-full max-w-sm bw-modal-card">
         <h2 className="font-semibold text-base mb-4">Make a payment on "{debt.name}"</h2>
@@ -261,5 +265,6 @@ function PayModal({ debt, error, onClose, onSave }) {
         </form>
       </div>
     </div>
+    </Portal>
   );
 }

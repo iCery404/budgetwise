@@ -3,6 +3,7 @@ import api from "../api";
 import { useAuth } from "../context/AuthContext";
 import { fmtDate } from "../components/Shared";
 import Icon from "../components/Icon";
+import Portal from "../components/Portal";
 
 export default function AdminUsers() {
   const { user: currentUser } = useAuth();
@@ -124,6 +125,7 @@ function UserModal({ userRecord, error, onClose, onSave }) {
   }
 
   return (
+    <Portal>
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50 bw-modal-overlay">
       <div className="bg-card rounded-2xl p-6 w-full max-w-md bw-modal-card">
         <h2 className="font-semibold text-base mb-4">{userRecord ? "Edit User" : "Add New User"}</h2>
@@ -166,5 +168,6 @@ function UserModal({ userRecord, error, onClose, onSave }) {
         </form>
       </div>
     </div>
+    </Portal>
   );
 }

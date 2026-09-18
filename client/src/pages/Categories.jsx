@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import api from "../api";
 import Icon from "../components/Icon";
+import Portal from "../components/Portal";
 
 const COLORS = ["#6B9A7C", "#A8C5D4", "#C99A5B", "#D4A5A5", "#8BA888", "#B8A99A", "#7A9E9F", "#C79ECF", "#E0A85C"];
 
@@ -116,6 +117,7 @@ function CategoryModal({ category, error, onClose, onSave }) {
   }
 
   return (
+    <Portal>
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50 bw-modal-overlay">
       <div className="bg-card rounded-2xl p-6 w-full max-w-md bw-modal-card">
         <h2 className="font-semibold text-base mb-4">{category ? "Edit Category" : "Add Category"}</h2>
@@ -163,5 +165,6 @@ function CategoryModal({ category, error, onClose, onSave }) {
         </form>
       </div>
     </div>
+    </Portal>
   );
 }

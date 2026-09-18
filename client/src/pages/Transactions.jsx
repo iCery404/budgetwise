@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import api from "../api";
 import { ProgressBar, budgetColor, MonthYearPicker, peso, fmtDate } from "../components/Shared";
 import Icon from "../components/Icon";
+import Portal from "../components/Portal";
 
 const now = new Date();
 const PAYMENT_METHODS = ["Cash", "GCash", "Bank Transfer", "Credit Card", "Debit Card"];
@@ -377,6 +378,7 @@ function TransactionModal({ tx, categories, error, onClose, onSave }) {
   }
 
   return (
+    <Portal>
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50 bw-modal-overlay">
       <div className="bg-card rounded-2xl p-6 w-full max-w-md bw-modal-card">
         <h2 className="font-semibold text-base mb-4">{tx ? "Edit Transaction" : "Add Transaction"}</h2>
@@ -466,6 +468,7 @@ function TransactionModal({ tx, categories, error, onClose, onSave }) {
         </form>
       </div>
     </div>
+    </Portal>
   );
 }
 
@@ -492,6 +495,7 @@ function RecurringModal({ categories, error, onClose, onSave }) {
   }
 
   return (
+    <Portal>
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50 bw-modal-overlay">
       <div className="bg-card rounded-2xl p-6 w-full max-w-md bw-modal-card">
         <h2 className="font-semibold text-base mb-4">Add Recurring Rule</h2>
@@ -572,6 +576,7 @@ function RecurringModal({ categories, error, onClose, onSave }) {
         </form>
       </div>
     </div>
+    </Portal>
   );
 }
 
@@ -585,6 +590,7 @@ function BudgetModal({ budget, categories, month, year, error, onClose, onSave }
   }
 
   return (
+    <Portal>
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50 bw-modal-overlay">
       <div className="bg-card rounded-2xl p-6 w-full max-w-md bw-modal-card">
         <h2 className="font-semibold text-base mb-4">{budget ? "Edit Budget" : "Set Budget"}</h2>
@@ -621,5 +627,6 @@ function BudgetModal({ budget, categories, month, year, error, onClose, onSave }
         </form>
       </div>
     </div>
+    </Portal>
   );
 }
