@@ -87,7 +87,7 @@ export default function Dashboard() {
                       nameKey="name"
                       innerRadius={35}
                       outerRadius={60}
-                      paddingAngle={2}
+                      paddingAngle={categoryBreakdown.length > 1 ? 2 : 0}
                     >
                       {categoryBreakdown.map((c, i) => (
                         <Cell key={i} fill={c.color} />
