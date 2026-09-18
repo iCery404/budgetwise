@@ -1,0 +1,111 @@
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #FAF4E9;
+  --color-card: #FFFDF8;
+  --color-muted: #F1E7D6;
+  --color-border: #E8DBC3;
+  --color-text: #3A2F22;
+  --color-text-body: #5C4E3D;
+  --color-text-muted: #8A7A63;
+  --color-sage: #6B9A7C;
+  --color-sage-deep: #45705A;
+  --color-sage-light: #E7F0E5;
+  --color-sand: #C99A5B;
+  --color-sand-soft: #FBEED9;
+  --color-rose: #C67B62;
+  --color-rose-soft: #F8E7DE;
+  --color-sidebar: #33422F;
+  --font-sans: 'Quicksand', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+
+  --radius-2xl: 20px;
+  --radius-xl: 16px;
+  --radius-lg: 14px;
+
+  --shadow-sm: 0 2px 8px rgba(120,90,50,.08), 0 1px 3px rgba(120,90,50,.06);
+  --shadow-md: 0 6px 20px rgba(120,90,50,.10);
+  --shadow-lg: 0 14px 34px rgba(90,70,40,.14);
+}
+
+body {
+  background: var(--color-bg);
+  background-image:
+    radial-gradient(ellipse 60% 40% at 8% 0%, rgba(107,154,124,.07), transparent 60%),
+    radial-gradient(ellipse 55% 45% at 100% 12%, rgba(201,154,91,.08), transparent 60%);
+  background-attachment: fixed;
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+.bg-card, input, select, textarea {
+  border-radius: var(--radius-xl);
+}
+
+button {
+  transition: transform .15s cubic-bezier(0.22,1,0.36,1), filter .15s, background .18s, color .18s;
+}
+button:active {
+  transform: scale(.96);
+}
+
+/* Route/page fade-in, re-triggered per page via a key on the wrapper */
+@keyframes bw-page-in {
+  from { opacity: 0; transform: translateY(8px) scale(1.005); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.bw-page-enter {
+  animation: bw-page-in .38s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+/* Native cross-fade between pages where supported (Chrome/Edge) */
+::view-transition-old(root) { animation: bw-fade-out .3s cubic-bezier(0.22,1,0.36,1) both; }
+::view-transition-new(root) { animation: bw-fade-in .36s cubic-bezier(0.22,1,0.36,1) both; }
+@keyframes bw-fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes bw-fade-in  { from { opacity: 0; } to { opacity: 1; } }
+
+@keyframes bw-modal-in {
+  from { opacity: 0; transform: translateY(14px) scale(.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.bw-modal-card {
+  animation: bw-modal-in .32s cubic-bezier(0.22,1,0.36,1) both;
+}
+@keyframes bw-overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.bw-modal-overlay {
+  animation: bw-overlay-in .25s cubic-bezier(0.22,1,0.36,1) both;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Dark mode: same tokens, warm-dark palette. Toggled via a .dark class on
+   <html> (see ThemeContext) - since Tailwind's utilities already read these
+   as CSS custom properties, overriding them here is enough for every
+   bg-card / text-text-muted / etc. class to repaint automatically. */
+.dark {
+  --color-bg: #211D17;
+  --color-card: #2A251D;
+  --color-muted: #342E24;
+  --color-border: #453C2E;
+  --color-text: #F1E7D6;
+  --color-text-body: #D8CBB5;
+  --color-text-muted: #9C8F78;
+  --color-sage: #7FAF8E;
+  --color-sage-deep: #6FA07F;
+  --color-sage-light: #2C3B30;
+  --color-sand: #D4A968;
+  --color-sand-soft: #3B331F;
+  --color-rose: #D48F76;
+  --color-rose-soft: #3D2C24;
+}
