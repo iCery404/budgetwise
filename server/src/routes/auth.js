@@ -105,4 +105,64 @@ router.get("/me", requireAuth, (req, res) => {
   res.json({ user: req.user });
 });
 
+// No email service is set up for this project, so a real "check your inbox"
+// flow isn't possible. Instead this generates a one-time temporary password
+// and returns it directly in the response for the client to display - the
+// user then uses it, like a code, to set a real new password below.
+// Trade-off worth knowing: since there's no email step, anyone who knows an
+// account's email address can trigger a reset for it. Fine for a school
+// project; wire this to an actual email provider before handling real users.
+router.post(
+  "/forgot-password",
+  [body("email").isEmail().withMessage("Please enter a valid email.")],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(422).json({ message: errors.array()[0].msg });
+
+    const email = req.body.email.trim().toLowerCase();
+    const [rows] = await pool.query("SELECT id FROM users WHERE email = ?", [email]);
+    if (rows.length === 0) {
+      return res.json({ message: "If that email exists, a reset code has been generated." });
+    }
+
+    const tempPassword = "Reset" + Math.random().toString(36).slice(2, 8);
+    const hashed = await bcrypt.hash(tempPassword, 10);
+    await pool.query("UPDATE users SET password = ? WHERE id = ?", [hashed, rows[0].id]);
+
+    res.json({
+      message: "Temporary password generated. Use it below to set a new password.",
+      email,
+      tempPassword,
+    });
+  }
+);
+
+router.post(
+  "/reset-password",
+  [
+    body("email").isEmail().withMessage("Please enter a valid email."),
+    body("tempPassword").notEmpty().withMessage("Enter the temporary password."),
+    body("newPassword").isLength({ min: 6 }).withMessage("New password must be at least 6 characters."),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(422).json({ message: errors.array()[0].msg });
+
+    const email = req.body.email.trim().toLowerCase();
+    const [rows] = await pool.query("SELECT * FROM users WHERE email = ?", [email]);
+    if (rows.length === 0) {
+      return res.status(422).json({ message: "Invalid reset details." });
+    }
+
+    const match = await bcrypt.compare(req.body.tempPassword, rows[0].password);
+    if (!match) {
+      return res.status(422).json({ message: "Invalid reset details." });
+    }
+
+    const hashed = await bcrypt.hash(req.body.newPassword, 10);
+    await pool.query("UPDATE users SET password = ? WHERE id = ?", [hashed, rows[0].id]);
+    res.json({ message: "Password reset. You can log in with your new password now." });
+  }
+);
+
 module.exports = router;

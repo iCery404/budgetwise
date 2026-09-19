@@ -68,3 +68,13 @@ export function fmtDate(iso) {
   if (!iso) return "\u2014";
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
+
+export function calcAge(birthday) {
+  if (!birthday) return null;
+  const b = new Date(birthday);
+  const now = new Date();
+  let age = now.getFullYear() - b.getFullYear();
+  const m = now.getMonth() - b.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < b.getDate())) age--;
+  return age;
+}

@@ -97,3 +97,10 @@ CREATE TABLE IF NOT EXISTS debts (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS birthday DATE NULL,
+  ADD COLUMN IF NOT EXISTS sex ENUM('male','female','other','prefer_not') NULL;
+
+ALTER TABLE profile_requests
+  ADD COLUMN IF NOT EXISTS request_type ENUM('update','delete') NOT NULL DEFAULT 'update';

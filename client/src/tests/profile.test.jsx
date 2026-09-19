@@ -13,7 +13,7 @@ describe("Profile change request + admin approval flow", () => {
   it("lets a regular user request a name change that stays pending until an admin approves it", async () => {
     const user = userEvent.setup();
 
-    window.history.pushState({}, "", "/register");
+    window.history.pushState({}, "", "/#/register");
     render(<App />);
     await userEvent.type(screen.getByPlaceholderText("Juan Dela Cruz"), "System Admin");
     await userEvent.type(screen.getByPlaceholderText("you@example.com"), ADMIN_EMAIL);

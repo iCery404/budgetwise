@@ -4,13 +4,28 @@ import { StatCard, peso } from "../components/Shared";
 
 export default function AdminAnalytics() {
   const [data, setData] = useState(null);
+  const [error, setError] = useState("");
 
   const load = useCallback(async () => {
-    const { data } = await api.get("/analytics");
-    setData(data);
+    setError("");
+    try {
+      const { data } = await api.get("/analytics");
+      setData(data);
+    } catch (err) {
+      setError(err.response?.data?.message || "Couldn't load analytics. Please try again.");
+    }
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  if (error) {
+    return (
+      <div className="bg-rose-soft text-rose rounded-lg px-4 py-3 text-sm flex items-center justify-between gap-3">
+        <span>{error}</span>
+        <button onClick={load} className="font-medium underline flex-shrink-0">Retry</button>
+      </div>
+    );
+  }
 
   if (!data) return <div className="text-text-muted text-sm">Loading...</div>;
 

@@ -12,7 +12,7 @@ describe("BudgetWise end-to-end flow", () => {
   it("registers, adds a combined income+expense, sees automatic remaining balance, and blocks non-admins", async () => {
     const user = userEvent.setup();
 
-    window.history.pushState({}, "", "/register");
+    window.history.pushState({}, "", "/#/register");
     render(<App />);
 
     await userEvent.type(screen.getByPlaceholderText("Juan Dela Cruz"), "Test Tester");
@@ -59,7 +59,7 @@ describe("BudgetWise end-to-end flow", () => {
 
     expect(screen.queryByRole("link", { name: /user management/i })).not.toBeInTheDocument();
 
-    window.history.pushState({}, "", "/admin/users");
+    window.history.pushState({}, "", "/#/admin/users");
     window.dispatchEvent(new PopStateEvent("popstate"));
     await waitFor(() => {
       expect(screen.queryByRole("heading", { name: "User Management" })).not.toBeInTheDocument();

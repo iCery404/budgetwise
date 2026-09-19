@@ -10,6 +10,13 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : undefined,
+  // Without this, mysql2 returns DECIMAL columns (all money amounts, since
+  // SUM(amount) etc. are DECIMAL) as strings instead of numbers, to avoid
+  // silent precision loss. That's fine almost everywhere because JS coerces
+  // strings for *, /, and comparisons - but Pie chart math (and any other
+  // code that does string + string) breaks silently. This makes every
+  // DECIMAL come back as a real number app-wide.
+  decimalNumbers: true,
 });
 
 module.exports = pool;

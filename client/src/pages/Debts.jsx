@@ -10,12 +10,19 @@ export default function Debts() {
   const [showForm, setShowForm] = useState(false);
   const [payingFor, setPayingFor] = useState(null);
   const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await api.get("/debts");
-    setDebts(data);
-    setLoading(false);
+    setLoadError("");
+    try {
+      const { data } = await api.get("/debts");
+      setDebts(data);
+    } catch (err) {
+      setLoadError(err.response?.data?.message || "Couldn't load your debts. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -44,7 +51,12 @@ export default function Debts() {
         </button>
       </div>
 
-      {loading ? (
+      {loadError ? (
+        <div className="bg-rose-soft text-rose rounded-lg px-4 py-3 text-sm flex items-center justify-between gap-3">
+          <span>{loadError}</span>
+          <button onClick={load} className="font-medium underline flex-shrink-0">Retry</button>
+        </div>
+      ) : loading ? (
         <div className="text-center text-text-muted text-sm py-8">Loading...</div>
       ) : active.length === 0 ? (
         <div className="bg-card border border-border rounded-2xl p-8 text-center text-text-muted text-sm shadow-sm">

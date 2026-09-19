@@ -7,7 +7,7 @@ router.use(requireAuth, requireAdmin);
 
 router.get("/", async (req, res) => {
   const [rows] = await pool.query(
-    `SELECT pr.id, pr.requested_name, pr.requested_email, pr.requested_password, pr.status, pr.created_at,
+    `SELECT pr.id, pr.requested_name, pr.requested_email, pr.requested_password, pr.request_type, pr.status, pr.created_at,
             u.id AS user_id, u.name AS current_name, u.email AS current_email
      FROM profile_requests pr
      JOIN users u ON u.id = pr.user_id
@@ -25,6 +25,12 @@ router.post("/:id/approve", async (req, res) => {
 
   const [[user]] = await pool.query("SELECT * FROM users WHERE id = ?", [reqRow.user_id]);
   if (!user) return res.status(404).json({ message: "That user no longer exists." });
+
+  if (reqRow.request_type === "delete") {
+    await pool.query("DELETE FROM users WHERE id = ?", [user.id]);
+    await pool.query("UPDATE profile_requests SET status='approved', reviewed_at=NOW() WHERE id=?", [req.params.id]);
+    return res.json({ message: "Approved. The account has been deleted." });
+  }
 
   if (reqRow.requested_email) {
     const [dupe] = await pool.query("SELECT id FROM users WHERE email = ? AND id != ?", [reqRow.requested_email, user.id]);

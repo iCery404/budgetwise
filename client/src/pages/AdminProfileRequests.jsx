@@ -16,7 +16,8 @@ export default function AdminProfileRequests() {
 
   useEffect(() => { load(); }, [load]);
 
-  async function handleApprove(id) {
+  async function handleApprove(id, requestType) {
+    if (requestType === "delete" && !confirm("This permanently deletes the account and all its data. Approve?")) return;
     setBusyId(id);
     try {
       await api.post(`/profile-requests/${id}/approve`);
@@ -43,7 +44,7 @@ export default function AdminProfileRequests() {
     <div>
       <h1 className="text-lg font-semibold mb-1">Profile Change Requests</h1>
       <p className="text-sm text-text-muted mb-6">
-        Users asked to change their name, email, or password. Nothing changes until you say yes.
+        Users asked to change their name, email, or password &mdash; or to delete their account. Nothing changes until you say yes.
       </p>
 
       {loading ? (
@@ -61,35 +62,43 @@ export default function AdminProfileRequests() {
           {requests.map((r) => (
             <div key={r.id} className="bg-card border border-border rounded-2xl p-5 shadow-sm">
               <div className="text-sm text-text-muted mb-2">
-                <strong className="text-text">{r.current_name}</strong> ({r.current_email}) wants to change:
+                <strong className="text-text">{r.current_name}</strong> ({r.current_email}) {r.request_type === "delete" ? "wants to:" : "wants to change:"}
               </div>
               <div className="space-y-1 mb-4">
-                {r.requested_name && (
-                  <div className="text-[14px]">
-                    Name &rarr; <strong className="text-sage-deep">{r.requested_name}</strong>
-                  </div>
-                )}
-                {r.requested_email && (
-                  <div className="text-[14px]">
-                    Email &rarr; <strong className="text-sage-deep">{r.requested_email}</strong>
-                  </div>
-                )}
-                {r.requested_password && (
-                  <div className="text-[14px]">
-                    Password &rarr; <strong className="text-sage-deep">wants a new one (hidden for safety)</strong>
-                  </div>
+                {r.request_type === "delete" ? (
+                  <div className="text-[14px] text-rose font-medium">Delete their account (permanent, all data removed)</div>
+                ) : (
+                  <>
+                    {r.requested_name && (
+                      <div className="text-[14px]">
+                        Name &rarr; <strong className="text-sage-deep">{r.requested_name}</strong>
+                      </div>
+                    )}
+                    {r.requested_email && (
+                      <div className="text-[14px]">
+                        Email &rarr; <strong className="text-sage-deep">{r.requested_email}</strong>
+                      </div>
+                    )}
+                    {r.requested_password && (
+                      <div className="text-[14px]">
+                        Password &rarr; <strong className="text-sage-deep">wants a new one (hidden for safety)</strong>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={() => handleApprove(r.id)}
+                  onClick={() => handleApprove(r.id, r.request_type)}
                   disabled={busyId === r.id}
-                  className="flex-1 flex items-center justify-center gap-2 bg-sage text-white rounded-xl py-2.5 text-sm font-semibold hover:brightness-105 disabled:opacity-60"
+                  className={`flex-1 flex items-center justify-center gap-2 text-white rounded-xl py-2.5 text-sm font-semibold hover:brightness-105 disabled:opacity-60 ${
+                    r.request_type === "delete" ? "bg-rose" : "bg-sage"
+                  }`}
                 >
                   <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
-                  Yes, allow it
+                  {r.request_type === "delete" ? "Yes, delete" : "Yes, allow it"}
                 </button>
                 <button
                   onClick={() => handleReject(r.id)}
