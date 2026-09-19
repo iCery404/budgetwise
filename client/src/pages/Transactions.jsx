@@ -20,6 +20,7 @@ export default function Transactions() {
   const [recurring, setRecurring] = useState([]);
   const [showRecurring, setShowRecurring] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   const [showTxForm, setShowTxForm] = useState(false);
   const [editingTx, setEditingTx] = useState(null);
@@ -34,21 +35,27 @@ export default function Transactions() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    await api.post("/recurring/run", { month, year }).catch(() => {});
-    const params = new URLSearchParams({ from, to });
-    if (categoryFilter) params.set("category_id", categoryFilter);
-    if (search.trim()) params.set("search", search.trim());
-    const [txRes, budRes, catRes, recRes] = await Promise.all([
-      api.get(`/transactions?${params.toString()}`),
-      api.get(`/budgets?month=${month}&year=${year}`),
-      api.get("/categories"),
-      api.get("/recurring"),
-    ]);
-    setTransactions(txRes.data);
-    setBudgets(budRes.data);
-    setCategories(catRes.data);
-    setRecurring(recRes.data);
-    setLoading(false);
+    setLoadError("");
+    try {
+      await api.post("/recurring/run", { month, year }).catch(() => {});
+      const params = new URLSearchParams({ from, to });
+      if (categoryFilter) params.set("category_id", categoryFilter);
+      if (search.trim()) params.set("search", search.trim());
+      const [txRes, budRes, catRes, recRes] = await Promise.all([
+        api.get(`/transactions?${params.toString()}`),
+        api.get(`/budgets?month=${month}&year=${year}`),
+        api.get("/categories"),
+        api.get("/recurring"),
+      ]);
+      setTransactions(txRes.data);
+      setBudgets(budRes.data);
+      setCategories(catRes.data);
+      setRecurring(recRes.data);
+    } catch (err) {
+      setLoadError(err.response?.data?.message || "Couldn't load your transactions. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }, [from, to, month, year, categoryFilter, search]);
 
   useEffect(() => {
@@ -233,7 +240,12 @@ export default function Transactions() {
           </select>
         </div>
 
-        {loading ? (
+        {loadError ? (
+          <div className="bg-rose-soft text-rose rounded-lg px-4 py-3 text-sm flex items-center justify-between gap-3">
+            <span>{loadError}</span>
+            <button onClick={load} className="font-medium underline flex-shrink-0">Retry</button>
+          </div>
+        ) : loading ? (
           <div className="text-center text-text-muted text-sm py-8">Loading...</div>
         ) : visibleTx.length === 0 ? (
           <div className="text-center text-text-muted text-sm py-8">No transactions found for this filter.</div>

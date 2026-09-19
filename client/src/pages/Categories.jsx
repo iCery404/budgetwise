@@ -10,10 +10,16 @@ export default function Categories() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState("");
 
   const load = useCallback(async () => {
-    const { data } = await api.get("/categories");
-    setCategories(data);
+    setLoadError("");
+    try {
+      const { data } = await api.get("/categories");
+      setCategories(data);
+    } catch (err) {
+      setLoadError(err.response?.data?.message || "Couldn't load categories. Please try again.");
+    }
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -78,6 +84,13 @@ export default function Categories() {
           <Icon name="plus" size={14} /> Add Category
         </button>
       </div>
+
+      {loadError && (
+        <div className="bg-rose-soft text-rose rounded-lg px-4 py-3 text-sm flex items-center justify-between gap-3 mb-4">
+          <span>{loadError}</span>
+          <button onClick={load} className="font-medium underline flex-shrink-0">Retry</button>
+        </div>
+      )}
 
       <div className="grid md:grid-cols-2 gap-4">
         <CategoryList title="Expense Categories" items={expenseCats} />

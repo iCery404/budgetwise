@@ -5,13 +5,20 @@ import Icon from "../components/Icon";
 export default function AdminProfileRequests() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [busyId, setBusyId] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await api.get("/profile-requests");
-    setRequests(data);
-    setLoading(false);
+    setLoadError("");
+    try {
+      const { data } = await api.get("/profile-requests");
+      setRequests(data);
+    } catch (err) {
+      setLoadError(err.response?.data?.message || "Couldn't load requests. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -47,7 +54,12 @@ export default function AdminProfileRequests() {
         Users asked to change their name, email, or password &mdash; or to delete their account. Nothing changes until you say yes.
       </p>
 
-      {loading ? (
+      {loadError ? (
+        <div className="bg-rose-soft text-rose rounded-lg px-4 py-3 text-sm flex items-center justify-between gap-3">
+          <span>{loadError}</span>
+          <button onClick={load} className="font-medium underline flex-shrink-0">Retry</button>
+        </div>
+      ) : loading ? (
         <div className="text-text-muted text-sm">Loading...</div>
       ) : requests.length === 0 ? (
         <div className="bg-card border border-border rounded-2xl p-8 text-center">

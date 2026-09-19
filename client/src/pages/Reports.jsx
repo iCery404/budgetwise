@@ -9,10 +9,16 @@ export default function Reports() {
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [year, setYear] = useState(now.getFullYear());
   const [data, setData] = useState(null);
+  const [loadError, setLoadError] = useState("");
 
   const load = useCallback(async () => {
-    const { data } = await api.get(`/reports?month=${month}&year=${year}`);
-    setData(data);
+    setLoadError("");
+    try {
+      const { data } = await api.get(`/reports?month=${month}&year=${year}`);
+      setData(data);
+    } catch (err) {
+      setLoadError(err.response?.data?.message || "Couldn't load this report. Please try again.");
+    }
   }, [month, year]);
 
   useEffect(() => { load(); }, [load]);
@@ -29,6 +35,14 @@ export default function Reports() {
     URL.revokeObjectURL(url);
   }
 
+  if (loadError) {
+    return (
+      <div className="bg-rose-soft text-rose rounded-lg px-4 py-3 text-sm flex items-center justify-between gap-3">
+        <span>{loadError}</span>
+        <button onClick={load} className="font-medium underline flex-shrink-0">Retry</button>
+      </div>
+    );
+  }
   if (!data) return <div className="text-text-muted text-sm">Loading...</div>;
 
   return (

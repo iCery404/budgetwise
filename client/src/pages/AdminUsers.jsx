@@ -11,10 +11,16 @@ export default function AdminUsers() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState("");
 
   const load = useCallback(async () => {
-    const { data } = await api.get("/users");
-    setUsers(data);
+    setLoadError("");
+    try {
+      const { data } = await api.get("/users");
+      setUsers(data);
+    } catch (err) {
+      setLoadError(err.response?.data?.message || "Couldn't load users. Please try again.");
+    }
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -43,6 +49,13 @@ export default function AdminUsers() {
           <Icon name="plus" size={14} /> Add User
         </button>
       </div>
+
+      {loadError && (
+        <div className="bg-rose-soft text-rose rounded-lg px-4 py-3 text-sm flex items-center justify-between gap-3 mb-4">
+          <span>{loadError}</span>
+          <button onClick={load} className="font-medium underline flex-shrink-0">Retry</button>
+        </div>
+      )}
 
       <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
         <table className="w-full text-[12.5px]">

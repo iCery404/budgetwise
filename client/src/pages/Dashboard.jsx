@@ -11,20 +11,59 @@ export default function Dashboard() {
   const [year, setYear] = useState(now.getFullYear());
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [dismissed, setDismissed] = useState([]);
+  const [editingLimit, setEditingLimit] = useState(null);
+  const [limitInput, setLimitInput] = useState("");
+  const [savingLimit, setSavingLimit] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
-    await api.post("/recurring/run", { month, year }).catch(() => {});
-    const { data } = await api.get(`/dashboard?month=${month}&year=${year}`);
-    setData(data);
-    setLoading(false);
+    setLoadError("");
+    try {
+      await api.post("/recurring/run", { month, year }).catch(() => {});
+      const { data } = await api.get(`/dashboard?month=${month}&year=${year}`);
+      setData(data);
+    } catch (err) {
+      setLoadError(err.response?.data?.message || "Couldn't load the dashboard. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }, [month, year]);
 
   useEffect(() => {
     load();
     setDismissed([]);
   }, [load]);
+
+  const startEditLimit = (w) => {
+    setEditingLimit(w.payment_method);
+    setLimitInput(w.creditLimit != null ? String(w.creditLimit) : "");
+  };
+
+  const saveLimit = async (paymentMethod) => {
+    const value = Number(limitInput);
+    if (limitInput === "" || Number.isNaN(value) || value < 0) return;
+    setSavingLimit(true);
+    try {
+      await api.put("/wallet-limits", { payment_method: paymentMethod, credit_limit: value });
+      setEditingLimit(null);
+      load();
+    } catch {
+      // silently keep the form open so the user can retry
+    } finally {
+      setSavingLimit(false);
+    }
+  };
+
+  if (loadError) {
+    return (
+      <div className="bg-rose-soft text-rose rounded-lg px-4 py-3 text-sm flex items-center justify-between gap-3">
+        <span>{loadError}</span>
+        <button onClick={load} className="font-medium underline flex-shrink-0">Retry</button>
+      </div>
+    );
+  }
 
   if (loading || !data) {
     return <div className="text-text-muted text-sm">Loading dashboard...</div>;
@@ -100,7 +139,9 @@ export default function Dashboard() {
                 {categoryBreakdown.map((c, i) => (
                   <div key={i} className="flex items-center gap-2 text-[12.5px] text-text-body">
                     <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: c.color }} />
-                    {c.name}
+                    <span className="flex-1">{c.name}</span>
+                    <span className="text-text-muted">{peso(c.total)}</span>
+                    <span className="text-text-muted w-9 text-right">{c.pct}%</span>
                   </div>
                 ))}
               </div>
@@ -153,17 +194,67 @@ export default function Dashboard() {
         </div>
 
         <div className="bg-card border border-border rounded-2xl p-4 shadow-sm">
-          <div className="font-semibold text-sm mb-3">Payment Method Balances</div>
+          <div className="flex items-center justify-between mb-3">
+            <div className="font-semibold text-sm">Payment activity (this period)</div>
+            <div className="text-[10.5px] text-text-muted">Net = money in \u2212 money out</div>
+          </div>
           {!wallets || wallets.length === 0 ? (
             <div className="text-center text-text-muted text-sm py-8">No payment methods recorded yet.</div>
           ) : (
             <div className="grid grid-cols-2 gap-2.5">
               {wallets.map((w) => (
                 <div key={w.payment_method} className="bg-muted rounded-xl p-3">
-                  <div className="text-[11px] text-text-muted mb-0.5">{w.payment_method}</div>
+                  <div className="flex items-center justify-between gap-1 mb-0.5">
+                    <div className="text-[11px] text-text-muted">{w.payment_method}</div>
+                    {editingLimit !== w.payment_method && (
+                      <button
+                        onClick={() => startEditLimit(w)}
+                        className="text-[10px] text-text-muted underline opacity-70 hover:opacity-100"
+                      >
+                        {w.creditLimit != null ? "Edit limit" : "Set limit"}
+                      </button>
+                    )}
+                  </div>
                   <div className={`text-sm font-semibold ${w.balance < 0 ? "text-rose" : "text-text"}`}>
                     {peso(w.balance)}
                   </div>
+                  <div className="text-[10.5px] text-text-muted mt-0.5">
+                    In {peso(w.moneyIn)} \u00b7 Out {peso(w.moneyOut)}
+                  </div>
+                  {editingLimit === w.payment_method ? (
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        autoFocus
+                        value={limitInput}
+                        onChange={(e) => setLimitInput(e.target.value)}
+                        placeholder="Credit limit"
+                        className="w-full px-2 py-1 border border-border rounded-lg text-[11px] bg-card"
+                      />
+                      <button
+                        onClick={() => saveLimit(w.payment_method)}
+                        disabled={savingLimit}
+                        className="text-[10.5px] font-medium text-sage-deep flex-shrink-0"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => setEditingLimit(null)}
+                        className="text-[10.5px] text-text-muted flex-shrink-0"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    w.creditLimit != null && (
+                      <div className="text-[10.5px] text-text-muted mt-0.5">
+                        Spent {peso(w.moneyOut)} \u00b7 Limit {peso(w.creditLimit)} \u00b7 Avail{" "}
+                        <span className={w.available < 0 ? "text-rose font-medium" : ""}>{peso(w.available)}</span>
+                      </div>
+                    )
+                  )}
                 </div>
               ))}
             </div>
@@ -185,6 +276,7 @@ export default function Dashboard() {
                   <th className="text-left font-medium pb-2">Date</th>
                   <th className="text-left font-medium pb-2">Description</th>
                   <th className="text-left font-medium pb-2">Category</th>
+                  <th className="text-left font-medium pb-2">Via / Wallet</th>
                   <th className="text-left font-medium pb-2">Type</th>
                   <th className="text-right font-medium pb-2">Amount</th>
                 </tr>
@@ -195,6 +287,7 @@ export default function Dashboard() {
                     <td className="py-2 text-text-body">{fmtDate(t.date)}</td>
                     <td className="py-2 text-text-body">{t.description || "\u2014"}</td>
                     <td className="py-2 text-text-body">{t.category_name || "Uncategorized"}</td>
+                    <td className="py-2 text-text-body">{t.payment_method || "\u2014"}</td>
                     <td className="py-2">
                       <span
                         className={`px-2 py-0.5 rounded-full text-[10.5px] font-medium ${

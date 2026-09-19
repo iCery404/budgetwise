@@ -23,13 +23,20 @@ export default function MyProfile() {
   const [deleteMessage, setDeleteMessage] = useState(null);
   const [deleteSaving, setDeleteSaving] = useState(false);
 
+  const [loadError, setLoadError] = useState("");
+
   const load = useCallback(async () => {
-    const { data } = await api.get("/profile");
-    setData(data);
-    setName(data.user.name);
-    setEmail(data.user.email);
-    setBirthday(data.user.birthday ? data.user.birthday.slice(0, 10) : "");
-    setSex(data.user.sex || "");
+    setLoadError("");
+    try {
+      const { data } = await api.get("/profile");
+      setData(data);
+      setName(data.user.name);
+      setEmail(data.user.email);
+      setBirthday(data.user.birthday ? data.user.birthday.slice(0, 10) : "");
+      setSex(data.user.sex || "");
+    } catch (err) {
+      setLoadError(err.response?.data?.message || "Couldn't load your profile. Please try again.");
+    }
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -108,6 +115,14 @@ export default function MyProfile() {
     }
   }
 
+  if (loadError) {
+    return (
+      <div className="bg-rose-soft text-rose rounded-lg px-4 py-3 text-sm flex items-center justify-between gap-3 max-w-xl">
+        <span>{loadError}</span>
+        <button onClick={load} className="font-medium underline flex-shrink-0">Retry</button>
+      </div>
+    );
+  }
   if (!data) return <div className="text-text-muted text-sm">Loading...</div>;
 
   const pending = data.pendingRequest;
