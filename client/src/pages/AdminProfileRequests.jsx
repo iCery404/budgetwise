@@ -51,7 +51,7 @@ export default function AdminProfileRequests() {
     <div>
       <h1 className="text-lg font-semibold mb-1">Profile Change Requests</h1>
       <p className="text-sm text-text-muted mb-6">
-        Users asked to change their name, email, or password &mdash; or to delete their account. Nothing changes until you say yes.
+        Users asked to change their name or email &mdash; or to delete their account. Nothing changes until you say yes.
       </p>
 
       {loadError ? (
@@ -89,11 +89,6 @@ export default function AdminProfileRequests() {
                     {r.requested_email && (
                       <div className="text-[14px]">
                         Email &rarr; <strong className="text-sage-deep">{r.requested_email}</strong>
-                      </div>
-                    )}
-                    {r.requested_password && (
-                      <div className="text-[14px]">
-                        Password &rarr; <strong className="text-sage-deep">wants a new one (hidden for safety)</strong>
                       </div>
                     )}
                   </>

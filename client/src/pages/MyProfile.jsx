@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { Link } from "react-router-dom";
 import api from "../api";
 import { useAuth } from "../context/AuthContext";
 import { calcAge } from "../components/Shared";
@@ -9,10 +10,14 @@ export default function MyProfile() {
   const [data, setData] = useState(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState(null);
   const [saving, setSaving] = useState(false);
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [passwordMessage, setPasswordMessage] = useState(null);
+  const [passwordSaving, setPasswordSaving] = useState(false);
 
   const [birthday, setBirthday] = useState("");
   const [sex, setSex] = useState("");
@@ -24,6 +29,7 @@ export default function MyProfile() {
   const [deleteSaving, setDeleteSaving] = useState(false);
 
   const [loadError, setLoadError] = useState("");
+  const [editMode, setEditMode] = useState(false);
 
   const load = useCallback(async () => {
     setLoadError("");
@@ -45,15 +51,9 @@ export default function MyProfile() {
     e.preventDefault();
     setMessage(null);
 
-    if (password && password !== confirmPassword) {
-      setMessage({ type: "error", text: "Those two passwords don't match. Please type your new password the same way in both boxes." });
-      return;
-    }
-
     const payload = {};
     if (name.trim() && name.trim() !== data.user.name) payload.name = name.trim();
     if (email.trim() && email.trim() !== data.user.email) payload.email = email.trim();
-    if (password) payload.password = password;
 
     if (Object.keys(payload).length === 0) {
       setMessage({ type: "error", text: "You haven't changed anything yet." });
@@ -63,8 +63,6 @@ export default function MyProfile() {
     setSaving(true);
     try {
       const { data: res } = await api.post("/profile/request", payload);
-      setPassword("");
-      setConfirmPassword("");
       setMessage({
         type: "success",
         text: res.autoApplied
@@ -76,6 +74,31 @@ export default function MyProfile() {
       setMessage({ type: "error", text: err.response?.data?.message || "Something went wrong. Please try again." });
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handlePasswordSubmit(e) {
+    e.preventDefault();
+    setPasswordMessage(null);
+
+    if (newPassword !== confirmNewPassword) {
+      setPasswordMessage({ type: "error", text: "Those two passwords don't match. Please type your new password the same way in both boxes." });
+      return;
+    }
+
+    if (!confirm("Update your password now?")) return;
+
+    setPasswordSaving(true);
+    try {
+      await api.put("/profile/password", { currentPassword, newPassword });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+      setPasswordMessage({ type: "success", text: "Password changed." });
+    } catch (err) {
+      setPasswordMessage({ type: "error", text: err.response?.data?.message || "Something went wrong. Please try again." });
+    } finally {
+      setPasswordSaving(false);
     }
   }
 
@@ -126,12 +149,85 @@ export default function MyProfile() {
   if (!data) return <div className="text-text-muted text-sm">Loading...</div>;
 
   const pending = data.pendingRequest;
+  const initials = (data.user.name || "?").trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+  const roleLabel = (data.user.role || "user").replace(/^\w/, (c) => c.toUpperCase());
+  const sexLabel = data.user.sex ? data.user.sex.replace(/^\w/, (c) => c.toUpperCase()) : null;
+
+  if (!editMode) {
+    return (
+      <div className="max-w-xl">
+        <h1 className="text-lg font-semibold mb-4 text-center">My Profile</h1>
+
+        {pending && (
+          <div className="bg-sand-soft border border-sand rounded-2xl p-4 mb-5 flex items-start gap-3">
+            <div className="w-9 h-9 rounded-full bg-sand flex items-center justify-center flex-shrink-0 text-white">
+              <Icon name={pending.request_type === "delete" ? "trash" : "edit"} size={16} />
+            </div>
+            <div className="flex-1">
+              <div className="font-semibold text-sm text-text mb-1">
+                {pending.request_type === "delete" ? "Your account deletion is waiting for approval" : "You have a change waiting for approval"}
+              </div>
+              <div className="text-[13px] text-text-muted">An admin needs to say yes before this takes effect.</div>
+              <button onClick={() => handleCancel(pending.id)} className="mt-2 text-[12.5px] text-rose font-medium hover:underline">
+                Cancel this request
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-sm text-center">
+          <div className="w-20 h-20 rounded-full bg-sage-deep text-white flex items-center justify-center text-2xl font-semibold mx-auto mb-3">
+            {initials}
+          </div>
+          <div className="text-base font-semibold text-text">{data.user.name}</div>
+          <div className="text-sm text-text-muted">{data.user.email}</div>
+          <div className="text-xs font-medium text-sage-deep mt-1">{roleLabel}</div>
+
+          <div className="grid grid-cols-3 gap-3 bg-muted rounded-xl mt-5 p-3.5 text-left">
+            <div>
+              <div className="text-[10px] uppercase tracking-wide text-text-muted mb-0.5">Birthday</div>
+              <div className="text-[13.5px] font-medium text-text-body">{birthday || "Not set"}</div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-wide text-text-muted mb-0.5">Sex</div>
+              <div className="text-[13.5px] font-medium text-text-body">{sexLabel || "Not set"}</div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-wide text-text-muted mb-0.5">Age</div>
+              <div className="text-[13.5px] font-medium text-text-body">{birthday ? calcAge(birthday) : "\u2014"}</div>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setEditMode(true)}
+            className="w-full mt-5 bg-sage text-white rounded-xl py-3 text-[15px] font-semibold hover:brightness-105 flex items-center justify-center gap-2"
+          >
+            <Icon name="edit" size={16} /> Edit my Profile
+          </button>
+          {pending?.request_type !== "delete" && (
+            <button
+              onClick={() => setEditMode(true)}
+              className="w-full mt-2.5 border border-rose/30 text-rose rounded-xl py-3 text-[15px] font-medium hover:bg-rose-soft"
+            >
+              Delete account
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-xl">
-      <h1 className="text-lg font-semibold mb-1">My Profile</h1>
+      <button
+        onClick={() => setEditMode(false)}
+        className="flex items-center gap-1 text-sm text-text-muted hover:text-text-body mb-4"
+      >
+        <Icon name="chevron-left" size={16} /> Back to profile
+      </button>
+      <h1 className="text-lg font-semibold mb-1">Edit my Profile</h1>
       <p className="text-sm text-text-muted mb-6">
-        Here you can change your name, email, or password. Just type what you want below and press Save.
+        Here you can change your name or email. Just type what you want below and press Save.
       </p>
 
       {pending && (
@@ -194,25 +290,6 @@ export default function MyProfile() {
           />
         </div>
 
-        <div className="pt-2 border-t border-border">
-          <div className="text-sm font-medium text-text-body mb-3">Want a new password? (Optional)</div>
-          <label className="block text-xs text-text-muted mb-1.5">New password</label>
-          <input
-            type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-            placeholder="Leave blank to keep your current password"
-            className="w-full px-3.5 py-2.5 border border-border rounded-xl text-[15px] outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 mb-3"
-          />
-          {password && (
-            <>
-              <label className="block text-xs text-text-muted mb-1.5">Type it again</label>
-              <input
-                type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-3.5 py-2.5 border border-border rounded-xl text-[15px] outline-none focus:border-sage focus:ring-2 focus:ring-sage/20"
-              />
-            </>
-          )}
-        </div>
-
         <button
           type="submit"
           disabled={saving}
@@ -227,6 +304,54 @@ export default function MyProfile() {
           </p>
         )}
       </form>
+
+      <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-5 mt-5">
+        <div>
+          <h2 className="text-sm font-semibold text-text mb-0.5">Change password</h2>
+          <p className="text-xs text-text-muted">Changes right away &mdash; no approval needed. Forgot it instead? <Link to="/forgot-password" className="text-sage font-medium">Reset it here</Link>.</p>
+        </div>
+
+        {passwordMessage && (
+          <div
+            className={`px-4 py-3 rounded-xl text-sm ${
+              passwordMessage.type === "success" ? "bg-sage-light text-sage-deep" : "bg-rose-soft text-rose"
+            }`}
+          >
+            {passwordMessage.text}
+          </div>
+        )}
+
+        <form onSubmit={handlePasswordSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-text-body mb-1.5">Current password</label>
+            <input
+              type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required
+              className="w-full px-3.5 py-2.5 border border-border rounded-xl text-[15px] outline-none focus:border-sage focus:ring-2 focus:ring-sage/20"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-body mb-1.5">New password</label>
+            <input
+              type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required
+              className="w-full px-3.5 py-2.5 border border-border rounded-xl text-[15px] outline-none focus:border-sage focus:ring-2 focus:ring-sage/20"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-body mb-1.5">Type new password again</label>
+            <input
+              type="password" value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} required
+              className="w-full px-3.5 py-2.5 border border-border rounded-xl text-[15px] outline-none focus:border-sage focus:ring-2 focus:ring-sage/20"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={passwordSaving}
+            className="w-full bg-sage text-white rounded-xl py-3 text-[15px] font-semibold hover:brightness-105 disabled:opacity-60"
+          >
+            {passwordSaving ? "Saving..." : "Update password"}
+          </button>
+        </form>
+      </div>
 
       <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-5 mt-5">
         <div>

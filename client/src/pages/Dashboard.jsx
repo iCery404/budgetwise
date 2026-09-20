@@ -196,7 +196,7 @@ export default function Dashboard() {
         <div className="bg-card border border-border rounded-2xl p-4 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <div className="font-semibold text-sm">Payment activity (this period)</div>
-            <div className="text-[10.5px] text-text-muted">Net = money in \u2212 money out</div>
+            <div className="text-[10.5px] text-text-muted">Net = money in {"\u2212"} money out</div>
           </div>
           {!wallets || wallets.length === 0 ? (
             <div className="text-center text-text-muted text-sm py-8">No payment methods recorded yet.</div>
@@ -219,7 +219,7 @@ export default function Dashboard() {
                     {peso(w.balance)}
                   </div>
                   <div className="text-[10.5px] text-text-muted mt-0.5">
-                    In {peso(w.moneyIn)} \u00b7 Out {peso(w.moneyOut)}
+                    In {peso(w.moneyIn)} {"\u00b7"} Out {peso(w.moneyOut)}
                   </div>
                   {editingLimit === w.payment_method ? (
                     <div className="flex items-center gap-1.5 mt-1.5">
@@ -250,7 +250,7 @@ export default function Dashboard() {
                   ) : (
                     w.creditLimit != null && (
                       <div className="text-[10.5px] text-text-muted mt-0.5">
-                        Spent {peso(w.moneyOut)} \u00b7 Limit {peso(w.creditLimit)} \u00b7 Avail{" "}
+                        Spent {peso(w.moneyOut)} {"\u00b7"} Limit {peso(w.creditLimit)} {"\u00b7"} Avail{" "}
                         <span className={w.available < 0 ? "text-rose font-medium" : ""}>{peso(w.available)}</span>
                       </div>
                     )

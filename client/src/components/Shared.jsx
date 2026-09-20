@@ -1,3 +1,6 @@
+import { useState, useEffect, useRef } from "react";
+import Icon from "./Icon";
+
 export function StatCard({ label, value, color }) {
   return (
     <div className="bg-card border border-border rounded-2xl p-4 shadow-sm">
@@ -31,31 +34,68 @@ const MONTHS = [
   "July", "August", "September", "October", "November", "December",
 ];
 
+const MONTH_ABBR3 = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
 export function MonthYearPicker({ month, year, onChange }) {
-  const years = [];
-  const nowY = new Date().getFullYear();
-  for (let y = nowY - 2; y <= nowY + 1; y++) years.push(y);
+  const [open, setOpen] = useState(false);
+  const [viewYear, setViewYear] = useState(year);
+  const boxRef = useRef(null);
+
+  useEffect(() => { if (open) setViewYear(year); }, [open, year]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (e) => { if (boxRef.current && !boxRef.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [open]);
+
+  const pickMonth = (m) => {
+    onChange(m, viewYear);
+    setOpen(false);
+  };
 
   return (
-    <div className="flex gap-2">
-      <select
-        value={month}
-        onChange={(e) => onChange(parseInt(e.target.value), year)}
-        className="px-2.5 py-1.5 border border-border rounded-lg text-[12.5px] bg-card"
+    <div className="relative" ref={boxRef}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-2 px-3.5 py-1.5 border border-border rounded-full text-[12.5px] bg-card text-text-body"
       >
-        {MONTHS.map((m, i) => (
-          <option key={i} value={i + 1}>{m}</option>
-        ))}
-      </select>
-      <select
-        value={year}
-        onChange={(e) => onChange(month, parseInt(e.target.value))}
-        className="px-2.5 py-1.5 border border-border rounded-lg text-[12.5px] bg-card"
-      >
-        {years.map((y) => (
-          <option key={y} value={y}>{y}</option>
-        ))}
-      </select>
+        <Icon name="calendar" size={14} className="text-text-muted" />
+        {MONTHS[month - 1]} {year}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 mt-2 z-20 bg-card border border-border rounded-2xl shadow-lg p-4 w-[220px]">
+          <div className="flex items-center justify-between mb-3">
+            <button type="button" onClick={() => setViewYear((y) => y - 1)} className="p-1 text-text-muted hover:text-text-body">
+              <Icon name="chevron-left" size={16} />
+            </button>
+            <div className="text-sm font-semibold">{viewYear}</div>
+            <button type="button" onClick={() => setViewYear((y) => y + 1)} className="p-1 text-text-muted hover:text-text-body">
+              <Icon name="chevron-right" size={16} />
+            </button>
+          </div>
+          <div className="grid grid-cols-3 gap-1.5">
+            {MONTH_ABBR3.map((m, i) => {
+              const selected = i + 1 === month && viewYear === year;
+              return (
+                <button
+                  type="button"
+                  key={m}
+                  onClick={() => pickMonth(i + 1)}
+                  className={`text-[12.5px] py-1.5 rounded-lg ${
+                    selected ? "bg-sage-deep text-white font-medium" : "text-text-body hover:bg-muted"
+                  }`}
+                >
+                  {m}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

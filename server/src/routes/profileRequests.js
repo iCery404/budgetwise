@@ -7,15 +7,14 @@ router.use(requireAuth, requireAdmin);
 
 router.get("/", async (req, res) => {
   const [rows] = await pool.query(
-    `SELECT pr.id, pr.requested_name, pr.requested_email, pr.requested_password, pr.request_type, pr.status, pr.created_at,
+    `SELECT pr.id, pr.requested_name, pr.requested_email, pr.request_type, pr.status, pr.created_at,
             u.id AS user_id, u.name AS current_name, u.email AS current_email
      FROM profile_requests pr
      JOIN users u ON u.id = pr.user_id
      WHERE pr.status = 'pending'
      ORDER BY pr.created_at ASC`
   );
-  const safe = rows.map((r) => ({ ...r, requested_password: r.requested_password ? true : false }));
-  res.json(safe);
+  res.json(rows);
 });
 
 router.post("/:id/approve", async (req, res) => {
@@ -39,10 +38,9 @@ router.post("/:id/approve", async (req, res) => {
     }
   }
 
-  await pool.query("UPDATE users SET name=?, email=?, password=? WHERE id=?", [
+  await pool.query("UPDATE users SET name=?, email=? WHERE id=?", [
     reqRow.requested_name || user.name,
     reqRow.requested_email || user.email,
-    reqRow.requested_password || user.password,
     user.id,
   ]);
   await pool.query("UPDATE profile_requests SET status='approved', reviewed_at=NOW() WHERE id=?", [req.params.id]);

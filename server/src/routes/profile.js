@@ -24,14 +24,13 @@ router.post(
   [
     body("name").optional({ checkFalsy: true }).trim().notEmpty(),
     body("email").optional({ checkFalsy: true }).isEmail().withMessage("Please enter a valid email."),
-    body("password").optional({ checkFalsy: true }).isLength({ min: 6 }).withMessage("Password must be at least 6 characters."),
   ],
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(422).json({ message: errors.array()[0].msg });
 
-    const { name, email, password } = req.body;
-    if (!name && !email && !password) {
+    const { name, email } = req.body;
+    if (!name && !email) {
       return res.status(422).json({ message: "Please change at least one field." });
     }
 
@@ -43,28 +42,45 @@ router.post(
 
     await pool.query("DELETE FROM profile_requests WHERE user_id = ? AND status = 'pending'", [req.user.id]);
 
-    const hashedPassword = password ? await bcrypt.hash(password, 10) : null;
-
     if (req.user.role === "admin") {
       const [[cur]] = await pool.query("SELECT * FROM users WHERE id = ?", [req.user.id]);
-      await pool.query("UPDATE users SET name=?, email=?, password=? WHERE id=?", [
+      await pool.query("UPDATE users SET name=?, email=? WHERE id=?", [
         name ? name.trim() : cur.name,
         email ? email.trim().toLowerCase() : cur.email,
-        hashedPassword || cur.password,
         req.user.id,
       ]);
       await pool.query(
-        "INSERT INTO profile_requests (user_id, requested_name, requested_email, requested_password, status, reviewed_at) VALUES (?, ?, ?, ?, 'approved', NOW())",
-        [req.user.id, name || null, email ? email.trim().toLowerCase() : null, hashedPassword]
+        "INSERT INTO profile_requests (user_id, requested_name, requested_email, status, reviewed_at) VALUES (?, ?, ?, 'approved', NOW())",
+        [req.user.id, name || null, email ? email.trim().toLowerCase() : null]
       );
       return res.json({ message: "Profile updated.", autoApplied: true });
     }
 
     await pool.query(
-      "INSERT INTO profile_requests (user_id, requested_name, requested_email, requested_password) VALUES (?, ?, ?, ?)",
-      [req.user.id, name ? name.trim() : null, email ? email.trim().toLowerCase() : null, hashedPassword]
+      "INSERT INTO profile_requests (user_id, requested_name, requested_email) VALUES (?, ?, ?)",
+      [req.user.id, name ? name.trim() : null, email ? email.trim().toLowerCase() : null]
     );
     res.status(201).json({ message: "Change request submitted. An admin needs to approve it before it takes effect.", autoApplied: false });
+  }
+);
+
+router.put(
+  "/password",
+  [
+    body("currentPassword").notEmpty().withMessage("Enter your current password."),
+    body("newPassword").isLength({ min: 6 }).withMessage("New password must be at least 6 characters."),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(422).json({ message: errors.array()[0].msg });
+
+    const [[user]] = await pool.query("SELECT * FROM users WHERE id = ?", [req.user.id]);
+    const match = await bcrypt.compare(req.body.currentPassword, user.password);
+    if (!match) return res.status(422).json({ message: "Your current password is incorrect." });
+
+    const hashed = await bcrypt.hash(req.body.newPassword, 10);
+    await pool.query("UPDATE users SET password = ? WHERE id = ?", [hashed, req.user.id]);
+    res.json({ message: "Password changed." });
   }
 );
 
