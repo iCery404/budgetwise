@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { Link } from "react-router-dom";
 import api from "../api";
 import { useAuth } from "../context/AuthContext";
 import { calcAge } from "../components/Shared";
@@ -9,10 +10,14 @@ export default function MyProfile() {
   const [data, setData] = useState(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState(null);
   const [saving, setSaving] = useState(false);
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [passwordMessage, setPasswordMessage] = useState(null);
+  const [passwordSaving, setPasswordSaving] = useState(false);
 
   const [birthday, setBirthday] = useState("");
   const [sex, setSex] = useState("");
@@ -46,15 +51,9 @@ export default function MyProfile() {
     e.preventDefault();
     setMessage(null);
 
-    if (password && password !== confirmPassword) {
-      setMessage({ type: "error", text: "Those two passwords don't match. Please type your new password the same way in both boxes." });
-      return;
-    }
-
     const payload = {};
     if (name.trim() && name.trim() !== data.user.name) payload.name = name.trim();
     if (email.trim() && email.trim() !== data.user.email) payload.email = email.trim();
-    if (password) payload.password = password;
 
     if (Object.keys(payload).length === 0) {
       setMessage({ type: "error", text: "You haven't changed anything yet." });
@@ -64,8 +63,6 @@ export default function MyProfile() {
     setSaving(true);
     try {
       const { data: res } = await api.post("/profile/request", payload);
-      setPassword("");
-      setConfirmPassword("");
       setMessage({
         type: "success",
         text: res.autoApplied
@@ -77,6 +74,29 @@ export default function MyProfile() {
       setMessage({ type: "error", text: err.response?.data?.message || "Something went wrong. Please try again." });
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handlePasswordSubmit(e) {
+    e.preventDefault();
+    setPasswordMessage(null);
+
+    if (newPassword !== confirmNewPassword) {
+      setPasswordMessage({ type: "error", text: "Those two passwords don't match. Please type your new password the same way in both boxes." });
+      return;
+    }
+
+    setPasswordSaving(true);
+    try {
+      await api.put("/profile/password", { currentPassword, newPassword });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+      setPasswordMessage({ type: "success", text: "Password changed." });
+    } catch (err) {
+      setPasswordMessage({ type: "error", text: err.response?.data?.message || "Something went wrong. Please try again." });
+    } finally {
+      setPasswordSaving(false);
     }
   }
 
@@ -205,7 +225,7 @@ export default function MyProfile() {
       </button>
       <h1 className="text-lg font-semibold mb-1">Edit my Profile</h1>
       <p className="text-sm text-text-muted mb-6">
-        Here you can change your name, email, or password. Just type what you want below and press Save.
+        Here you can change your name or email. Just type what you want below and press Save.
       </p>
 
       {pending && (
@@ -268,25 +288,6 @@ export default function MyProfile() {
           />
         </div>
 
-        <div className="pt-2 border-t border-border">
-          <div className="text-sm font-medium text-text-body mb-3">Want a new password? (Optional)</div>
-          <label className="block text-xs text-text-muted mb-1.5">New password</label>
-          <input
-            type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-            placeholder="Leave blank to keep your current password"
-            className="w-full px-3.5 py-2.5 border border-border rounded-xl text-[15px] outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 mb-3"
-          />
-          {password && (
-            <>
-              <label className="block text-xs text-text-muted mb-1.5">Type it again</label>
-              <input
-                type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-3.5 py-2.5 border border-border rounded-xl text-[15px] outline-none focus:border-sage focus:ring-2 focus:ring-sage/20"
-              />
-            </>
-          )}
-        </div>
-
         <button
           type="submit"
           disabled={saving}
@@ -301,6 +302,54 @@ export default function MyProfile() {
           </p>
         )}
       </form>
+
+      <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-5 mt-5">
+        <div>
+          <h2 className="text-sm font-semibold text-text mb-0.5">Change password</h2>
+          <p className="text-xs text-text-muted">Changes right away &mdash; no approval needed. Forgot it instead? <Link to="/forgot-password" className="text-sage font-medium">Reset it here</Link>.</p>
+        </div>
+
+        {passwordMessage && (
+          <div
+            className={`px-4 py-3 rounded-xl text-sm ${
+              passwordMessage.type === "success" ? "bg-sage-light text-sage-deep" : "bg-rose-soft text-rose"
+            }`}
+          >
+            {passwordMessage.text}
+          </div>
+        )}
+
+        <form onSubmit={handlePasswordSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-text-body mb-1.5">Current password</label>
+            <input
+              type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required
+              className="w-full px-3.5 py-2.5 border border-border rounded-xl text-[15px] outline-none focus:border-sage focus:ring-2 focus:ring-sage/20"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-body mb-1.5">New password</label>
+            <input
+              type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required
+              className="w-full px-3.5 py-2.5 border border-border rounded-xl text-[15px] outline-none focus:border-sage focus:ring-2 focus:ring-sage/20"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-body mb-1.5">Type new password again</label>
+            <input
+              type="password" value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} required
+              className="w-full px-3.5 py-2.5 border border-border rounded-xl text-[15px] outline-none focus:border-sage focus:ring-2 focus:ring-sage/20"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={passwordSaving}
+            className="w-full bg-sage text-white rounded-xl py-3 text-[15px] font-semibold hover:brightness-105 disabled:opacity-60"
+          >
+            {passwordSaving ? "Saving..." : "Update password"}
+          </button>
+        </form>
+      </div>
 
       <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-5 mt-5">
         <div>
