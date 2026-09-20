@@ -17,6 +17,9 @@ const PATHS = {
   search: "M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z",
   check: "M4.5 12.75l6 6 9-13.5",
   close: "M6 18L18 6M6 6l12 12",
+  calendar: "M6.75 3v2.25M17.25 3v2.25M3.75 7.5h16.5M4.5 6h15a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75h-15a.75.75 0 01-.75-.75V6.75A.75.75 0 014.5 6z",
+  "chevron-left": "M15.75 19.5L8.25 12l7.5-7.5",
+  "chevron-right": "M8.25 4.5l7.5 7.5-7.5 7.5",
 };
 
 export default function Icon({ name, size = 18, className = "" }) {
